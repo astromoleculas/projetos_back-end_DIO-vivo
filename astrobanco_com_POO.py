@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[16]:
 
 
-import random
+# import random
+import datetime
 
 class Variaveis:
     
@@ -13,6 +14,16 @@ class Variaveis:
         self.contas = {}
         self.agencia = '0001'
         self.senhas = {}
+        
+def log_transacao(tipo_transacao):
+    def decorador(func):
+        def wrapper(*args, **kwargs):
+            resultado = func(*args, **kwargs)
+            data_hora = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            print(f'\n[{data_hora}] {tipo_transacao} realizado.')
+            return resultado
+        return wrapper
+    return decorador
 
 class Cadastro_usuario(Variaveis):
     
@@ -23,6 +34,7 @@ class Cadastro_usuario(Variaveis):
                         'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS',
                         'SC', 'SP', 'SE', 'TO', 'DF', 'RR', 'MS', 'MT', 'RO']
     
+    @log_transacao("Cadastro de usuário")               
     def cadastrando_usuario(self):
         
         self.contador = 0
@@ -92,7 +104,9 @@ class Cadastro_conta(Variaveis):
         self.count = 0
         self.contador = 0
         self.voltar_ao_menu = False
-
+        self.iteracoes = {}
+    
+    @log_transacao("Cadastro de conta")
     def cadastrando_conta(self):
 
         while True:
@@ -234,6 +248,7 @@ class Menuzinho(Variaveis):
         self.contas = contas
         self.saques_diarios = {}
         
+    @log_transacao("Depósito")
     def depositar(self):
     
             while True:
@@ -244,7 +259,8 @@ class Menuzinho(Variaveis):
                     break
                 else:
                     print('\nValores negativos ou nulos não são permitidos')
-                    
+             
+    @log_transacao("Saque")
     def saque(self):
     
             if sum(self.contas[self.cpf][self.conta_atual][self.conta]) > 0:
@@ -269,13 +285,70 @@ class Menuzinho(Variaveis):
             
     def extrato(self):
         print(f'{40 * "*"}')
-        for i in range(len(self.contas[self.cpf][self.conta_atual][self.conta])):
-            if self.contas[self.cpf][self.conta_atual][self.conta][i] > 0:
-                print(f'Deposito no valor de R$ {self.contas[self.cpf][self.conta_atual][self.conta][i]:.2f}\n')
-            elif self.contas[self.cpf][self.conta_atual][self.conta][i] < 0:
-                print(f'Saque no valor de R$ {self.contas[self.cpf][self.conta_atual][self.conta][i]:.2f}\n')
-        print(f'Saldo total de R$ {sum(self.contas[self.cpf][self.conta_atual][self.conta]):.2f}')
-        print(f'{40 * "*"}')
+        
+        self.historico = self.contas[self.cpf][self.conta_atual][self.conta]
+        self.historico_valido = False
+        
+        if len(self.historico) > 1:
+            self.historico_valido = True
+        
+        def depositos():
+            for transacoes in self.historico:
+                if transacoes > 0:
+                    yield transacoes
+                    
+        def saques():
+            for transacoes in self.historico:
+                if transacoes < 0:
+                    yield transacoes
+                    
+        def extrato_total():
+            for transacoes in self.historico:
+                yield transacoes
+            
+        self.menu = """
+****************************************
+*[1] Depositos                         *
+*[2] Saques                            *
+*[3] Extrato total                     *
+****************************************  
+
+=>"""
+        if self.historico_valido:
+            while True:
+                self.opcao_valida = False
+                try:
+                    tipo_de_extrato = int(input(self.menu))
+                    self.opcao_valida = True
+                except:
+                    print('Informe uma opção válida')
+                                       
+                if 1 <= int(tipo_de_extrato) <= 3 and self.opcao_valida:
+                    if tipo_de_extrato == 1:
+                        for depositos in depositos():
+                            print(f'Deposito no valor de R$ {depositos}\n')
+                        print(f'Saldo total de R$ {sum(self.historico)}')
+                        print(f'{40 * "*"}')
+                        break
+                    elif tipo_de_extrato == 2:
+                        for saques in saques():
+                            print(f'Saques no valor de R$ {saques}\n')
+                        print(f'Saldo total de R$ {sum(self.historico)}')
+                        print(f'{40 * "*"}')
+                        break
+                    else:
+                        for transacoes in extrato_total():
+                            if transacoes > 0:
+                                print(f'Deposito no valor de R$ {transacoes}\n')
+                            if transacoes < 0:
+                                print(f'Saque no valor de R$ {transacoes}\n')
+                        print(f'Saldo total de R$ {sum(self.historico)}')
+                        print(f'{40 * "*"}')
+                        break
+                else:
+                    print('Informe uma opção válida')
+        else:
+            print('Não há histórico de transações')
         
     def entrar(self):
         
@@ -356,5 +429,11 @@ astrobanco.exibir_menu()
 # In[ ]:
 
 
-
+#for i in range(len(self.contas[self.cpf][self.conta_atual][self.conta])):
+ #   if self.contas[self.cpf][self.conta_atual][self.conta][i] > 0:
+  #      print(f'Deposito no valor de R$ {self.contas[self.cpf][self.conta_atual][self.conta][i]:.2f}\n')
+   # elif self.contas[self.cpf][self.conta_atual][self.conta][i] < 0:
+    #    print(f'Saque no valor de R$ {self.contas[self.cpf][self.conta_atual][self.conta][i]:.2f}\n')
+#print(f'Saldo total de R$ {sum(self.contas[self.cpf][self.conta_atual][self.conta]):.2f}')
+#print(f'{40 * "*"}')
 
